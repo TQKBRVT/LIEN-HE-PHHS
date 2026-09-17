@@ -3,100 +3,84 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Danh Bạ Học Sinh & PHHS</title>
-  <!-- Thư viện SheetJS đọc và xuất Excel -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <title>Lớp 12A1 - THPT Nguyễn Du</title>
   <style>
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: #f1f5f9; margin: 0; padding: 14px; }
     .header { position: sticky; top: 0; background: #f1f5f9; padding-bottom: 10px; z-index: 10; }
-    
-    /* Khối thông tin Trường & Lớp */
     .school-info { text-align: center; margin-bottom: 12px; background: #fff; padding: 12px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .school-name { font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
-    .class-title { font-size: 1.3rem; font-weight: 700; color: #0f172a; margin: 4px 0 8px 0; }
-    .btn-edit-header { background: #f1f5f9; border: 1px solid #cbd5e1; font-size: 11px; padding: 3px 8px; border-radius: 6px; cursor: pointer; color: #475569; }
-
+    .school-name { font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; }
+    .class-title { font-size: 1.3rem; font-weight: 700; color: #0f172a; margin: 4px 0 0 0; }
     .search-box { width: 100%; padding: 12px 14px; font-size: 15px; border: 1px solid #cbd5e1; border-radius: 10px; outline: none; margin-bottom: 10px; }
-    
-    .top-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-start; }
-    .btn-top { border: none; padding: 8px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
-    .btn-sample { background: #6366f1; color: #fff; }
-    .btn-upload { background: #059669; color: #fff; }
-    .btn-export { background: #d97706; color: #fff; }
-    .btn-add { background: #0284c7; color: #fff; }
-    .btn-clear { background: #ef4444; color: #fff; }
-    
-    #list { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+    #list { display: flex; flex-direction: column; gap: 10px; }
     .card { background: #ffffff; padding: 12px 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
     .info { flex: 1; padding-right: 8px; }
     .info .name { font-weight: 600; font-size: 15px; color: #1e293b; }
     .info .phone { font-size: 14px; color: #64748b; margin-top: 3px; }
-    
-    .actions { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; }
-    .btn { text-decoration: none; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+    .actions { display: flex; gap: 6px; }
+    .btn { text-decoration: none; padding: 7px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
     .btn-call { background: #16a34a; color: #ffffff; }
     .btn-zalo { background: #0068ff; color: #ffffff; }
-    .btn-edit { background: #f59e0b; color: #ffffff; }
-    .btn-del { background: #ef4444; color: #ffffff; }
-    .empty-state { text-align: center; color: #94a3b8; margin-top: 30px; font-size: 14px; line-height: 1.6; }
   </style>
 </head>
 <body>
 
   <div class="header">
-    <!-- Tiêu đề Trường & Lớp tùy biến -->
     <div class="school-info">
-      <div id="schoolDisplay" class="school-name">TRƯỜNG THPT...</div>
-      <div id="classDisplay" class="class-title">Lớp Chủ Nhiệm</div>
-      <button class="btn-edit-header" onclick="updateSchoolClass()">✏️ Đổi Trường / Lớp</button>
+      <div class="school-name">TRƯỜNG THPT NGUYỄN DU</div>
+      <div class="class-title">LỚP 12A1</div>
     </div>
-
-    <input type="text" id="search" class="search-box" placeholder="Tìm kiếm tên học sinh hoặc SĐT..." oninput="filterList()" />
-    
-    <div class="top-actions">
-      <button class="btn-top btn-sample" onclick="downloadSampleExcel()">📥 Tải mẫu Excel</button>
-      <button class="btn-top btn-upload" onclick="document.getElementById('fileInput').click()">📂 Tải file lên</button>
-      <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" style="display:none;" onchange="handleFileUpload(event)" />
-      
-      <button class="btn-top btn-export" onclick="exportToExcel()">📤 Xuất Excel</button>
-      <button class="btn-top btn-add" onclick="addNewStudent()">+ Thêm 1 em</button>
-      <button class="btn-top btn-clear" onclick="clearAllData()">Xóa hết</button>
-    </div>
+    <input type="text" id="search" class="search-box" placeholder="Tìm tên học sinh hoặc SĐT..." oninput="filterList()" />
   </div>
 
   <div id="list"></div>
 
   <script>
-    // Khởi tạo thông tin trường lớp từ bộ nhớ riêng của từng máy
-    let schoolName = localStorage.getItem("phhs_school_name") || "TRƯỜNG THPT NGUYỄN DU";
-    let className = localStorage.getItem("phhs_class_name") || "LỚP 12A1";
-    let listData = JSON.parse(localStorage.getItem("phhs_excel_db")) || [];
-
-    function updateHeaderView() {
-      document.getElementById("schoolDisplay").innerText = schoolName;
-      document.getElementById("classDisplay").innerText = className;
-      document.title = `${className} - ${schoolName}`;
-    }
-
-    function updateSchoolClass() {
-      const newSchool = prompt("Nhập tên Trường của thầy cô:", schoolName);
-      if (newSchool !== null && newSchool.trim() !== "") {
-        schoolName = newSchool.trim();
-        localStorage.setItem("phhs_school_name", schoolName);
-      }
-
-      const newClass = prompt("Nhập tên Lớp chủ nhiệm (ví dụ: Lớp 10A2, Lớp 12A1):", className);
-      if (newClass !== null && newClass.trim() !== "") {
-        className = newClass.trim();
-        localStorage.setItem("phhs_class_name", className);
-      }
-      updateHeaderView();
-    }
-
-    function saveData() {
-      localStorage.setItem("phhs_excel_db", JSON.stringify(listData));
-    }
+    // Dữ liệu chung mặc định của lớp 12A1
+    const defaultData = [
+      { name: "Đặng Thị Kim Anh", phone: "0909602696" },
+      { name: "Hoàng Thị Mai Anh", phone: "0379684564" },
+      { name: "Nguyễn Hoành Anh", phone: "0396212891" },
+      { name: "Nguyễn Tuấn Anh", phone: "0344979642" },
+      { name: "Trần Thành Công", phone: "0369858529" },
+      { name: "Trần Thanh Danh", phone: "0987820674" },
+      { name: "Nguyễn Tấn Dũng", phone: "0352024005" },
+      { name: "Nguyễn Thị Kỳ Duyên", phone: "0984880206" },
+      { name: "Nguyễn Thành Đạt", phone: "0326188301" },
+      { name: "Nguyễn Thế Thành Đạt", phone: "0384728971" },
+      { name: "Đặng Hoàng Giang", phone: "0384526015" },
+      { name: "Huỳnh Bảo Hân", phone: "0908077015" },
+      { name: "Nguyễn Lê Bảo Hân", phone: "0778516587" },
+      { name: "Trần Tuyết Hoa", phone: "0345645054" },
+      { name: "Nguyễn Văn Nhật Hòa", phone: "0909842008" },
+      { name: "Trần Đình Hòa", phone: "0332708618" },
+      { name: "Ninh Quang Hoan", phone: "0365780873" },
+      { name: "Bùi Gia Huy", phone: "0988712672" },
+      { name: "Hoàng Anh Kiệt", phone: "0909162972" },
+      { name: "Nguyễn Hoàng Lâm", phone: "0978303317" },
+      { name: "Nguyễn Võ Khánh Linh", phone: "0389752765" },
+      { name: "Cao Xuân Lộc", phone: "0399052954" },
+      { name: "Nguyễn Tấn Lộc", phone: "0973608337" },
+      { name: "Nguyễn Hải Trúc Ly", phone: "0985944148" },
+      { name: "Nguyễn Hoài Nam", phone: "0344949547" },
+      { name: "Cao Nguyễn Thiên Nhã", phone: "0328983513" },
+      { name: "Nguyễn Hà Minh Nhật", phone: "0335391392" },
+      { name: "Mai Gia Phát", phone: "0374768525" },
+      { name: "Nguyễn Nhật Phôn", phone: "0938788508" },
+      { name: "Nguyễn Thiên Phúc", phone: "0946185709" },
+      { name: "Nguyễn Hoàng Quốc Thịnh", phone: "0937957468" },
+      { name: "Lê Minh Thuận", phone: "0931208045" },
+      { name: "Ngô Nguyễn Bảo Thy", phone: "0333981242" },
+      { name: "Trần Nguyễn Bảo Thy", phone: "0937941568" },
+      { name: "Nguyễn Trọng Tình", phone: "0797252052" },
+      { name: "Hoàng Mai Đức Trí", phone: "0355867174" },
+      { name: "Nguyễn Trần Thanh Trúc", phone: "0389537236" },
+      { name: "Hồ Thành Trung", phone: "0329122598" },
+      { name: "Tạ Thị Thúy Uyên", phone: "0788866979" },
+      { name: "Nguyễn Đức Vượng", phone: "0938790502" },
+      { name: "Nguyễn Thị Ngọc Vy", phone: "0931205114" },
+      { name: "Trần Ngọc Hải Yến", phone: "0383523963" }
+    ];
 
     function removeTone(str) {
       return (str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -105,11 +89,7 @@
     function render(items) {
       const container = document.getElementById("list");
       if (items.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            Chưa có danh sách học sinh của <b>${className}</b>.<br>
-            Bấm <b>"📥 Tải mẫu Excel"</b> để lấy file mẫu, hoặc <b>"📂 Tải file lên"</b> nếu đã có sẵn.
-          </div>`;
+        container.innerHTML = `<p style="text-align:center; color:#94a3b8; margin-top:20px;">Không tìm thấy học sinh</p>`;
         return;
       }
       container.innerHTML = items.map(item => `
@@ -121,8 +101,6 @@
           <div class="actions">
             <a href="tel:${item.phone}" class="btn btn-call">Gọi</a>
             <a href="https://zalo.me/${item.phone}" target="_blank" class="btn btn-zalo">Zalo</a>
-            <button onclick="editItem(${item.id})" class="btn btn-edit">Sửa</button>
-            <button onclick="deleteItem(${item.id})" class="btn btn-del">Xóa</button>
           </div>
         </div>
       `).join("");
@@ -130,159 +108,13 @@
 
     function filterList() {
       const keyword = removeTone(document.getElementById("search").value);
-      const filtered = listData.filter(item => 
-        removeTone(item.name).includes(keyword) || (item.phone && item.phone.includes(keyword))
+      const filtered = defaultData.filter(item => 
+        removeTone(item.name).includes(keyword) || item.phone.includes(keyword)
       );
       render(filtered);
     }
 
-    /* 1. Tải mẫu Excel có sẵn thông tin Trường & Lớp */
-    function downloadSampleExcel() {
-      const sampleRows = [
-        { "STT": 1, "Trường": schoolName, "Lớp": className, "Họ và Tên": "Nguyễn Văn An", "SĐT Phụ Huynh": "0901234567" },
-        { "STT": 2, "Trường": schoolName, "Lớp": className, "Họ và Tên": "Trần Thị Bình", "SĐT Phụ Huynh": "0912345678" }
-      ];
-      
-      const ws = XLSX.utils.json_to_sheet(sampleRows);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Mau_Danh_Sach");
-      XLSX.writeFile(wb, `Mau_Danh_Sach_${className}.xlsx`);
-    }
-
-    /* 2. Xuất dữ liệu ra Excel mang tên trường lớp */
-    function exportToExcel() {
-      if (listData.length === 0) {
-        alert("Hiện tại chưa có dữ liệu để xuất!");
-        return;
-      }
-      const exportRows = listData.map((item, index) => ({
-        "STT": index + 1,
-        "Trường": schoolName,
-        "Lớp": className,
-        "Họ và Tên": item.name,
-        "SĐT Phụ Huynh": item.phone
-      }));
-
-      const ws = XLSX.utils.json_to_sheet(exportRows);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, className);
-      XLSX.writeFile(wb, `Danh_Ba_${className}_${schoolName}.xlsx`);
-    }
-
-    /* 3. Tải file từ máy lên */
-    function handleFileUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-          const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-          let count = 0;
-
-          rows.forEach((row, index) => {
-            if (!row || row.length === 0) return;
-
-            let detectedName = "";
-            let detectedPhone = "";
-
-            row.forEach(cell => {
-              if (!cell) return;
-              let val = cell.toString().trim();
-              let cleanNum = val.replace(/\s+/g, "");
-
-              if (/^\d{9,10}$/.test(cleanNum)) {
-                if (cleanNum.length === 9) cleanNum = "0" + cleanNum;
-                detectedPhone = cleanNum;
-              } else if (!/^\d+$/.test(val) && val.length > 2 && !detectedName) {
-                const lower = val.toLowerCase();
-                if (!lower.includes("họ và tên") && !lower.includes("họ tên") && !lower.includes("stt") && !lower.includes("trường") && !lower.includes("lớp")) {
-                  detectedName = val;
-                }
-              }
-            });
-
-            if (detectedName && detectedPhone) {
-              listData.push({
-                id: Date.now() + index,
-                name: detectedName,
-                phone: detectedPhone
-              });
-              count++;
-            }
-          });
-
-          if (count > 0) {
-            saveData();
-            filterList();
-            alert(`Đã nạp thành công ${count} học sinh vào ${className}!`);
-          } else {
-            alert("Không tìm thấy dữ liệu phù hợp. File cần có cột Họ tên và Số điện thoại.");
-          }
-        } catch (err) {
-          alert("Lỗi khi đọc file: " + err.message);
-        }
-        event.target.value = "";
-      };
-      reader.readAsArrayBuffer(file);
-    }
-
-    function editItem(id) {
-      const student = listData.find(item => item.id === id);
-      if (!student) return;
-
-      const newName = prompt("Nhập họ và tên học sinh:", student.name);
-      if (newName === null) return;
-
-      const newPhone = prompt("Nhập số điện thoại PHHS:", student.phone);
-      if (newPhone === null) return;
-
-      student.name = newName.trim() || student.name;
-      student.phone = newPhone.trim();
-      saveData();
-      filterList();
-    }
-
-    function addNewStudent() {
-      const name = prompt("Nhập họ và tên học sinh mới:");
-      if (!name || !name.trim()) return;
-
-      const phone = prompt("Nhập số điện thoại phụ huynh:");
-      if (phone === null) return;
-
-      listData.unshift({
-        id: Date.now(),
-        name: name.trim(),
-        phone: phone.trim()
-      });
-      saveData();
-      filterList();
-    }
-
-    function deleteItem(id) {
-      const student = listData.find(item => item.id === id);
-      if (!student) return;
-      if (confirm(`Bạn có chắc muốn xóa học sinh "${student.name}" không?`)) {
-        listData = listData.filter(item => item.id !== id);
-        saveData();
-        filterList();
-      }
-    }
-
-    function clearAllData() {
-      if (listData.length === 0) return;
-      if (confirm(`Thầy cô có chắc chắn muốn xóa toàn bộ danh sách của ${className} không?`)) {
-        listData = [];
-        saveData();
-        filterList();
-      }
-    }
-
-    updateHeaderView();
-    render(listData);
+    render(defaultData);
   </script>
 </body>
 </html>
